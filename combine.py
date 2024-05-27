@@ -1,22 +1,38 @@
 import pandas as pd
-import glob
+import glob, os
 
-attFolder = r'F:\\OneDrive\\Documents\\CoA NPU Coordinator\\City Of Atlanta\\NPU - Documents\\2024\\NPU Attendance and Voting Reports\\TestData\\*.xlsx'
+attFolder = r'F:\\OneDrive\\Documents\\CoA NPU Coordinator\\City Of Atlanta\\NPU - Documents\\2024\\NPU Attendance and Voting Reports\\TestData\\Attendance Data\\'
 excel_files = glob.glob(attFolder)
 
 df1 = pd.DataFrame()
 
-for excel_file in excel_files:
-  # drop the first 2 rows from each file and drop any columns beyond the first two
-  df2 = pd.read_excel(excel_file).iloc[3:, :2]
-  # remove any row that contains '@atlantaga.gov'
-  # df2['Topic'] = df2['Topic'].astype(str)
-  # cast all values to string
-  df2 = df2.astype(str)
-  df2 = df2[~df2['Topic'].str.contains('@atlantaga.gov')]
-  # replace any NaN values with the value to its left
-  # **not working as expected**
-  df2 = df2.ffill(axis="columns")
-  df1 = pd.concat([df1,df2], ignore_index=True)
+# walk through the attFolder and combine all the files into one
+for root, dirs, files in os.walk(attFolder):
+    for file in files:
+        if file.endswith('.xlsx'):
+            # drop the first 2 rows from each file and drop any columns beyond the first two
+            df2 = pd.read_excel(os.path.join(root, file)).iloc[3:, :2]
+            df2 = df2.astype(str)
+            # remove any row that contains '@atlantaga.gov'
+            df2 = df2[~df2['Topic'].str.contains('@atlantaga.gov')]
+            df1 = pd.concat([df1, df2], ignore_index=True)
+
+
+# rename the second column to 'Email'
+df1.rename(columns={df1.columns[0]: 'Name'}, inplace=True)
+df1.rename(columns={df1.columns[1]: 'Email'}, inplace=True)
+
+# TODO: NOT WORKING
+# # fill forward any nan values in the 'Email' column using the value in the 'Name' column
+# df1['Email'] = df1['Email'].fillna(method='ffill')
+
+# count the number of times each email appears in the dataframe and add it to a new column
+df1['Count'] = df1.groupby('Email')['Email'].transform('count')
+
+# drop any duplicate rows
+df1 = df1.drop_duplicates()
+
+# sort the dataframe by the 'Count' column in descending order
+df1 = df1.sort_values(by='Count', ascending=False)
 
 df1.to_excel(r'F:\\OneDrive\\Documents\\CoA NPU Coordinator\\City Of Atlanta\NPU - Documents\\2024\\NPU Attendance and Voting Reports\\TestData\\Combined.xlsx', index=False)
