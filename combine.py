@@ -1,7 +1,7 @@
 import pandas as pd
 import glob, os
 
-attFolder = r'F:\\OneDrive\\Documents\\CoA NPU Coordinator\\City Of Atlanta\\NPU - Documents\\2024\\NPU Attendance and Voting Reports\\TestData\\Attendance Data\\'
+attFolder = r'.\\Attendance Data\\'
 excel_files = glob.glob(attFolder)
 
 df1 = pd.DataFrame()
@@ -35,4 +35,10 @@ df1 = df1.drop_duplicates()
 # sort the dataframe by the 'Count' column in descending order
 df1 = df1.sort_values(by='Count', ascending=False)
 
-df1.to_excel(r'F:\\OneDrive\\Documents\\CoA NPU Coordinator\\City Of Atlanta\NPU - Documents\\2024\\NPU Attendance and Voting Reports\\TestData\\Combined.xlsx', index=False)
+# highlight any rows where the 'Count' column is greater than 3 in light green
+def highlight_greater_than_3(s):
+    return ['background-color: lightgreen' if v > 3 else '' for v in s]
+
+df1.style.apply(highlight_greater_than_3, subset=['Count'])
+
+df1.to_excel(r'Combined.xlsx', index=False)
